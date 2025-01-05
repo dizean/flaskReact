@@ -4,6 +4,13 @@ import seaborn as sns
 from mpld3 import plugins
 import mpld3
 import plotly as px
+
+try:
+    df = pd.read_csv("FSHS.csv")
+except Exception as e:
+    print(f"Error reading CSV file: {e}")
+    df = None  # Set df to None if there's an error
+
 def fillMissing(df):
     filler = df.fillna(0)
     return filler
@@ -12,38 +19,36 @@ def processCSV(df):
     missingFill = fillMissing(df)
     return missingFill
 
+regions = df['Region'].unique()
+years = df['Year'].unique()
+sectors = df['Sector'].unique()
+gr11male = [col for col in df.columns if 'MALE' in col and 'FEMALE' not in col and '11' in col]
+gr12male = [col for col in df.columns if 'MALE' in col and 'FEMALE' not in col and '12' in col]
+gr11female = [col for col in df.columns if 'FEMALE' in col and '11' in col]
+gr12female = [col for col in df.columns if 'FEMALE' in col and '12' in col]
+gr11 = [col for col in df.columns if '11' in col]
+gr12 = [col for col in df.columns if '12' in col]
+grandtotal = gr11 + gr12
+male = [col for col in df.columns if 'MALE' in col and 'FEMALE' not in col]
+sortedmale = sorted(male, key=lambda x: (x.split(' ')[1], x.split(' ')[0]))
+groupedmale = df[sortedmale].T.groupby(lambda x: x.split(' ')[1]).sum().T
+groupedmale['Year'] = df['Year']
+groupedmale['Sector'] = df['Sector']
+groupedmale['Region'] = df['Region']
+female = [col for col in df.columns if 'FEMALE' in col]
+sortedfemale = sorted(female, key=lambda x: (x.split(' ')[1], x.split(' ')[0]))
+groupedfemale = df[sortedfemale].T.groupby(lambda x: x.split(' ')[1]).sum().T
+groupedfemale['Year'] = df['Year']
+groupedfemale['Sector'] = df['Sector']
+groupedfemale['Region'] = df['Region']
+allmandf = male + female
 # PLOTS BY REGION
 # TOTAL BY STRAND EACH REGION
-def totalbyStrandEachRegion(df, regionIndex=0, sectorIndex=0, gradegenderIndex=0):
-    regions = df['Region'].unique()
-    sectors = df['Sector'].unique()
+def totalbyStrandEachRegion(regionIndex=0, sectorIndex=0, gradegenderIndex=0):
     regIndex = len(regions)
     secIndex = len(sectors)
     gradegenIndex = 22
-
-    gr11male = [col for col in df.columns if 'MALE' in col and 'FEMALE' not in col and '11' in col]
-    gr12male = [col for col in df.columns if 'MALE' in col and 'FEMALE' not in col and '12' in col]
-    gr11female = [col for col in df.columns if 'FEMALE' in col and '11' in col]
-    gr12female = [col for col in df.columns if 'FEMALE' in col and '12' in col]
-    gr11 = [col for col in df.columns if '11' in col]
-    gr12 = [col for col in df.columns if '12' in col]
-    grandtotal = gr11 + gr12
-    male = [col for col in df.columns if 'MALE' in col and 'FEMALE' not in col]
-    sortedmale = sorted(male, key=lambda x: (x.split(' ')[1], x.split(' ')[0]))
-    groupedmale = df[sortedmale].T.groupby(lambda x: x.split(' ')[1]).sum().T
-    groupedmale['Year'] = df['Year']
-    groupedmale['Sector'] = df['Sector']
-    groupedmale['Region'] = df['Region']
-    female = [col for col in df.columns if 'FEMALE' in col]
-    sortedfemale = sorted(female, key=lambda x: (x.split(' ')[1], x.split(' ')[0]))
-    groupedfemale = df[sortedfemale].T.groupby(lambda x: x.split(' ')[1]).sum().T
-    groupedfemale['Year'] = df['Year']
-    groupedfemale['Sector'] = df['Sector']
-    groupedfemale['Region'] = df['Region']
-    allmandf = male + female
-    fig, ax = plt.subplots(figsize=(16, 9))
-    fig.subplots_adjust(bottom=0.2)
-
+    fig, ax = plt.subplots(figsize=(8, 5))
     def update_plot(region_idx, selection_idx, sector_idx):
         print("regionidx:", region_idx, flush= True)
         print("selection_idx:", selection_idx, flush= True)
@@ -256,18 +261,13 @@ def totalbyStrandEachRegion(df, regionIndex=0, sectorIndex=0, gradegenderIndex=0
     html_content = mpld3.fig_to_html(fig) 
     return regIndex, secIndex, gradegenIndex, html_content
 
-def totalStudentsbySector(df, regionIndex=0, yearIndex=0, genderIndex=0):
-    regions = df['Region'].unique()
-    years = df['Year'].unique()
+def totalStudentsbySector(regionIndex=0, yearIndex=0, genderIndex=0, width=500, height=500):
     regIndex = len(regions)
     yrIndex = len(years)
     gendIndex = 3
-    male = [col for col in df.columns if 'MALE' in col and 'FEMALE' not in col]
-    female = [col for col in df.columns if 'FEMALE' in col]
     
-    fig, ax = plt.subplots(figsize=(10, 5))
-    fig.subplots_adjust(bottom=0.2)
-
+    fig, ax = plt.subplots(figsize=(width / 100, height / 100))  
+    
     def update_plot(region_idx, year_idx, gender_idx):
         ax.clear()
         gender = {
@@ -291,27 +291,28 @@ def totalStudentsbySector(df, regionIndex=0, yearIndex=0, genderIndex=0):
             region_year_data = by_sector.loc[(current_region, current_year)]
             sector_counts = region_year_data.sum(axis=1)
 
-        # Create pie chart
         wedges, texts, autotexts = ax.pie(
-            sector_counts,
-            labels=sector_counts.index,
-            autopct=lambda pct: f'{pct:.1f}%' if pct > 0 else '',
-            colors=sns.color_palette("rocket_r"),
-            radius=1.2
-        )
-        ax.set_title(f"{gender_label} Students in ({current_year}) by Sector in {current_region}", pad=20, loc='center', y=-0.2)
+                sector_counts,
+                labels=sector_counts.index,
+                autopct=lambda pct: f'{pct:.1f}%' if pct > 0 else '',
+                colors=sns.color_palette("rocket_r"),
+                radius=1.2,
+                labeldistance=0.3
+            )
+
+        ax.set_title(f"{gender_label} Students in ({current_year}) by Sector in {current_region}")
 
     update_plot(regionIndex, yearIndex, genderIndex)
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])  
+
+    plt.subplots_adjust(left=0.05, right=0.95, top=0.85, bottom=0.1)  
+    plt.tight_layout(pad=0) 
+
     html_content = mpld3.fig_to_html(fig)
     return regIndex, yrIndex, gendIndex, html_content
 
 
-def totalStudentsbyRegion(df, yearIndex=0): 
-    regions = df['Region'].unique()
-    years = df['Year'].unique()
+def totalStudentsbyRegion(yearIndex=0): 
     yrIndex = len(years)
-    allmandf = [col for col in df.columns if 'MALE' in col]
     fig, ax = plt.subplots(figsize=(10, 5))
 
     def update_plot(year_idx):
@@ -339,7 +340,96 @@ def totalStudentsbyRegion(df, yearIndex=0):
 
 
 
+# @app.route('/totalbyStrandEachRegion', methods=['GET', 'PUT'])
+# def totalStrand():
+#     if request.method == 'GET':
+#         print("Handling GET request")
+#         regIndex, secIndex, gradegenIndex, html_content = totalbyStrandEachRegion()
+#         return jsonify({
+#             "regions": regIndex,
+#             "sectors": secIndex,
+#             "gradeGender": gradegenIndex,
+#             'plotHTML': html_content,
+#         })
+    
+#     elif request.method == 'PUT':
+#         print("Handling PUT request")
+#         data = request.get_json()
+#         regionIndex = data.get('regIndex', 0)
+#         sectorIndex = data.get('secIndex', 0)
+#         gradegenderIndex = data.get('gradegenIndex', 0)
 
+#         # Update plot based on new indices
+#         regIndex, secIndex, gradegenIndex, html_content = totalbyStrandEachRegion(regionIndex, sectorIndex, gradegenderIndex)
+
+#         return jsonify({
+#             "message": "Indices updated",
+#             "regions": regIndex,
+#             "sectors": secIndex,
+#             "gender": gradegenIndex,
+#             "updatedRegIndex": regionIndex,
+#             "updatedSecIndex": sectorIndex,
+#             "updatedGradeGenIndex": gradegenderIndex,
+#             "updatedPlot": html_content
+#         })
+
+# @app.route('/totalStudentsbySector', methods=['GET', 'PUT'])
+# def totalStudentsSector():
+#     if request.method == 'GET':
+#         print("Handling GET request")
+#         regIndex, yrIndex, gendIndex, html_content= totalStudentsbySector()
+#         return jsonify({
+#             "regions": regIndex,
+#             "years": yrIndex,
+#             "genders": gendIndex,
+#             'plotHTML': html_content,
+#         })
+    
+#     elif request.method == 'PUT':
+#         print("Handling PUT request")
+#         data = request.get_json()
+#         regionIndex = data.get('regIndex', 0)
+#         genderIndex = data.get('genIndex', 0)
+#         yearIndex = data.get('yearIndex', 0)
+
+#         # Update plot based on new indices
+#         regIndex, yrIndex, gendIndex,html_content  = totalStudentsbySector(regionIndex, yearIndex,genderIndex )
+# # 
+#         return jsonify({
+#             "message": "Indices updated",
+#             "regions": regIndex,
+#             "sectors": yrIndex,
+#             "gender": gendIndex,
+#             "updatedRegIndex": regionIndex,
+#             "updatedGenderIndex": genderIndex,
+#             "updatedYearIndex": yearIndex,
+#             "updatedPlot": html_content
+#         })  
+# @app.route('/totalStudentsbyRegion', methods=['GET', 'PUT'])
+# def totalStudentsRegion():
+    
+#     if request.method == 'GET':
+#         print("Handling GET request")
+#         yrIndex,html_content= totalStudentsbyRegion()
+#         return jsonify({
+#             "years": yrIndex,
+#             'plotHTML': html_content,
+#         })
+    
+#     elif request.method == 'PUT':
+#         print("Handling PUT request")
+#         data = request.get_json()
+#         yearIndex = data.get('yearIndex', 0)
+
+#         # Update plot based on new indices
+#         yrIndex ,html_content  = totalStudentsbyRegion(yearIndex )
+# # 
+#         return jsonify({
+#             "message": "Indices updated",
+#             "sectors": yrIndex,
+#             "updatedYearIndex": yearIndex,
+#             "updatedPlot": html_content
+#         }) 
 
 
 

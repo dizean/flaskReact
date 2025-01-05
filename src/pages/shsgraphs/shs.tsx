@@ -7,15 +7,15 @@ const SHS: React.FC = () => {
     
     return (
         <div className="w-full flex flex-wrap">
-        <div className="w-full">
+        <div className="w-1/3">
             <TotalStudentsBySector/>
         </div>  
-        <div className="w-full">
+        {/* <div className="w-1/2">
             <TotalStudentsByRegion/>
         </div>
         <div className="w-full">
             <TotalStrandsByRegion/>
-        </div>
+        </div> */}
 
         
         </div>

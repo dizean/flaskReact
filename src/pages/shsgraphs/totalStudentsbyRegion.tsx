@@ -15,7 +15,6 @@ const TotalStudentsByRegion: React.FC = () => {
                 }
                 const data = await response.json();
                 setResult(data);
-                console.log(data)
                 if (data.plotHTML) {
                     setPlotHtmlUrl(data.plotHTML);
                 }
@@ -68,7 +67,7 @@ const TotalStudentsByRegion: React.FC = () => {
     };
 
     return (
-        <div className="p-6 bg-gray-100 rounded-lg shadow-md">
+        <div className=" bg-gray-100 rounded-lg shadow-md">
             <h1 className="text-3xl font-bold text-center mb-4">Total Students All Regions</h1>
             {loadingData ? (
                 <p className="text-lg text-gray-600 text-center">Loading data...</p>
@@ -83,7 +82,7 @@ const TotalStudentsByRegion: React.FC = () => {
                         </button>
                     </div>
                     {plotHtmlUrl ? (
-                        <iframe srcDoc={plotHtmlUrl} title="External HTML Content" className="w-full h-[500px] border-none rounded-lg shadow-md" />
+                        <iframe srcDoc={plotHtmlUrl} title="External HTML Content" className="w-full h-full border-none rounded-lg shadow-md" />
                     ) : (
                         <p className="text-lg text-gray-600 text-center">No plot available.</p>
                     )}

@@ -165,7 +165,7 @@ const TotalStrandsByRegion: React.FC = () => {
                     </button>
                 </div>
                 {plotHtmlUrl ? (
-                     <iframe srcDoc={plotHtmlUrl} title="External HTML Content" className="w-full h-[500px] border-none rounded-lg shadow-md" />
+                     <iframe srcDoc={plotHtmlUrl} title="External HTML Content" className="w-full h-[500px] border-none rounded-lg shadow-md bg-emerald-300" />
                 ) : (
                     <p className="text-lg text-gray-600 text-center">No plot available.</p>
                 )}
